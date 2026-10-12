@@ -1,0 +1,112 @@
+```sql
+CREATE DATABASE IndiaEconomicAnalytics;
+USE IndiaEconomicAnalytics;
+
+CREATE TABLE Economic_Data (
+    Record_ID INT PRIMARY KEY,
+    Year INT,
+    GDP_Growth DECIMAL(5,2),
+    Inflation_Rate DECIMAL(5,2),
+    USD_INR DECIMAL(10,2),
+    Exports_Billion_USD DECIMAL(12,2),
+    Imports_Billion_USD DECIMAL(12,2),
+    Foreign_Reserves_Billion_USD DECIMAL(12,2)
+);
+
+INSERT INTO Economic_Data VALUES
+(1, 2020, -5.80, 6.20, 74.10, 313.00, 367.00, 577.00),
+(2, 2021,  9.70, 5.50, 73.90, 395.00, 573.00, 633.00),
+(3, 2022,  7.60, 6.70, 78.60, 453.00, 723.00, 562.00),
+(4, 2023,  9.20, 5.40, 82.20, 451.00, 715.00, 620.00),
+(5, 2024,  6.50, 4.90, 83.70, 442.00, 721.00, 640.00);
+
+-- 1. Analyze the annual rupee-dollar exchange rate
+SELECT Year, USD_INR
+FROM Economic_Data
+ORDER BY Year;
+
+-- 2. Calculate the annual percentage change in USD-INR
+SELECT
+    Year,
+    USD_INR,
+    LAG(USD_INR) OVER (ORDER BY Year) AS Previous_Rate,
+    ROUND(
+        (USD_INR - LAG(USD_INR) OVER (ORDER BY Year))
+        / LAG(USD_INR) OVER (ORDER BY Year) * 100,
+        2
+    ) AS Annual_Change_Percent
+FROM Economic_Data;
+
+-- 3. Calculate the trade deficit
+SELECT
+    Year,
+    Exports_Billion_USD,
+    Imports_Billion_USD,
+    Imports_Billion_USD - Exports_Billion_USD AS Trade_Deficit_Billion_USD
+FROM Economic_Data
+ORDER BY Year;
+
+-- 4. Compare GDP growth and inflation
+SELECT
+    Year,
+    GDP_Growth,
+    Inflation_Rate,
+    ROUND(GDP_Growth - Inflation_Rate, 2) AS Growth_Inflation_Gap
+FROM Economic_Data
+ORDER BY Year;
+
+-- 5. Identify years with high inflation
+SELECT Year, Inflation_Rate
+FROM Economic_Data
+WHERE Inflation_Rate >= 6.00
+ORDER BY Inflation_Rate DESC;
+
+-- 6. Rank years by foreign exchange reserves
+SELECT
+    Year,
+    Foreign_Reserves_Billion_USD,
+    RANK() OVER (
+        ORDER BY Foreign_Reserves_Billion_USD DESC
+    ) AS Reserve_Rank
+FROM Economic_Data;
+
+-- 7. Calculate average GDP growth and inflation
+SELECT
+    ROUND(AVG(GDP_Growth), 2) AS Average_GDP_Growth,
+    ROUND(AVG(Inflation_Rate), 2) AS Average_Inflation
+FROM Economic_Data;
+
+-- 8. Identify the highest and lowest exchange rates
+SELECT
+    MAX(USD_INR) AS Highest_USD_INR,
+    MIN(USD_INR) AS Lowest_USD_INR
+FROM Economic_Data;
+
+-- 9. Analyze exports and imports by year
+SELECT
+    Year,
+    Exports_Billion_USD,
+    Imports_Billion_USD,
+    ROUND(Exports_Billion_USD / Imports_Billion_USD * 100, 2)
+        AS Export_Import_Coverage_Percent
+FROM Economic_Data
+ORDER BY Year;
+
+-- 10. Summarize economic indicators by performance
+SELECT
+    CASE
+        WHEN GDP_Growth >= 7 THEN 'High Growth'
+        WHEN GDP_Growth >= 4 THEN 'Moderate Growth'
+        ELSE 'Low Growth'
+    END AS Growth_Category,
+    COUNT(*) AS Number_Of_Years,
+    ROUND(AVG(Inflation_Rate), 2) AS Average_Inflation,
+    ROUND(AVG(USD_INR), 2) AS Average_USD_INR
+FROM Economic_Data
+GROUP BY
+    CASE
+        WHEN GDP_Growth >= 7 THEN 'High Growth'
+        WHEN GDP_Growth >= 4 THEN 'Moderate Growth'
+        ELSE 'Low Growth'
+    END;
+```
